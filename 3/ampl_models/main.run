@@ -1,0 +1,53 @@
+# PRIMAL
+print "### Primal ###"; print "";
+reset; reset data;
+
+## Set options
+model primal.mod;
+data gen_train.dat;
+option solver cplex;
+problem primal: w, gamma, s, fobj, soft_constraints, slack_positiveness;
+solve primal;
+display w, gamma;
+
+
+# DUAL
+print "### Dual ###"; print "";
+reset; reset data;
+
+## Set options
+model dual.mod;
+data gen_train.dat;
+option solver cplex;
+problem dual: w, lambda, fobj, lambda_constraints, var_constraints, get_w_values;
+solve dual;
+display w;
+
+param gamma;
+param cnt; let cnt := 0;
+param gamma_sum; let gamma_sum := 0;
+for {i in {1..m}} {
+	if 0.975*nu > lambda[i] > 1e-3 then {
+		let gamma_sum := gamma_sum + 1/y[i] - sum{j in {1..n}} w[j]*x[i,j];
+		let cnt := cnt + 1;
+	}
+}
+let gamma := gamma_sum/cnt;
+display gamma;
+
+# Accuracy of the SVM
+reset data nu, m, n, x, y;
+data gen_test.dat;
+param y_pred {1..m};
+let {i in {1..m}} y_pred[i] := gamma + sum{j in {1..n}} w[j]*x[i,j];
+let {i in {1..m}} y_pred[i] := if y_pred[i] <= 0 then -1 else 1;
+
+param errors; let errors := 0;
+for {i in {1..m}} {
+	if y_pred[i] != y[i] then
+		let errors := errors + 1;
+}
+display errors;
+
+param accuracy = (m - errors) / m;
+display accuracy;

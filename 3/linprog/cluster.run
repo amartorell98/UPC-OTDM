@@ -1,0 +1,27 @@
+# PRIMAL
+print "### Solve problem ###"; print "";
+reset; reset data;
+
+## Set options
+model cluster.mod;
+data iris.dat;
+option solver cplex;
+option cplex_options 'timing 1';
+solve;
+
+print "### Matrix x (formulation) ###"; print "";
+#display x;
+
+
+print "### Number of points per cluster ###"; print "";
+
+var total{i in 1..m};
+
+for{i in 1..m} {
+	for{j in 1..m}{
+		let total[i] := total[i] + x[j,i];
+	}
+} 
+
+
+display total;
